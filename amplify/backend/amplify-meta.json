@@ -1,0 +1,114 @@
+{
+  "providers": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-typeimp-dev-31f08-authRole",
+      "UnauthRoleArn": "arn:aws:iam::773623060459:role/amplify-typeimp-dev-31f08-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::773623060459:role/amplify-typeimp-dev-31f08-authRole",
+      "Region": "us-east-2",
+      "DeploymentBucketName": "amplify-typeimp-dev-31f08-deployment",
+      "UnauthRoleName": "amplify-typeimp-dev-31f08-unauthRole",
+      "StackName": "amplify-typeimp-dev-31f08",
+      "StackId": "arn:aws:cloudformation:us-east-2:773623060459:stack/amplify-typeimp-dev-31f08/6c2f2940-4bd6-11f0-aecb-069ba8b456bd",
+      "AmplifyAppId": "d294le9epr8t06",
+      "APIGatewayAuthURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/api/APIGatewayAuthStack.json"
+    }
+  },
+  "auth": {
+    "typeimp628ba24a": {
+      "service": "Cognito",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": [],
+      "customAuth": false,
+      "frontendAuthConfig": {
+        "socialProviders": [],
+        "usernameAttributes": [
+          "EMAIL"
+        ],
+        "signupAttributes": [
+          "EMAIL"
+        ],
+        "passwordProtectionSettings": {
+          "passwordPolicyMinLength": 8,
+          "passwordPolicyCharacters": []
+        },
+        "mfaConfiguration": "OFF",
+        "mfaTypes": [
+          "SMS"
+        ],
+        "verificationMechanisms": [
+          "EMAIL"
+        ]
+      },
+      "providerMetadata": {
+        "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/auth/typeimp628ba24a-cloudformation-template.json",
+        "logicalId": "authtypeimp628ba24a"
+      },
+      "lastPushTimeStamp": "2025-06-18T00:46:09.841Z",
+      "output": {
+        "UserPoolId": "us-east-2_eh6r88yA6",
+        "AppClientIDWeb": "1l2d3gt35bv0oj4scgvggso8g4",
+        "AppClientID": "6ls9hkladcpf31qg4n5ncfbeim",
+        "IdentityPoolId": "us-east-2:14cb31e7-8259-43b0-844e-3def55f96bce",
+        "UserPoolArn": "arn:aws:cognito-idp:us-east-2:773623060459:userpool/us-east-2_eh6r88yA6",
+        "IdentityPoolName": "typeimp628ba24a_identitypool_628ba24a__dev",
+        "UserPoolName": "typeimp628ba24a_userpool_628ba24a"
+      },
+      "lastPushDirHash": "d9D90LZ+EfObZ8q90HGnx9/v830="
+    }
+  },
+  "function": {
+    "notesLambda": {
+      "build": true,
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda",
+      "lastBuildTimeStamp": "2025-06-18T00:43:39.182Z",
+      "lastBuildType": "PROD",
+      "lastPackageTimeStamp": "2025-06-18T00:43:57.148Z",
+      "distZipFilename": "notesLambda-79566a5131307735732f-build.zip",
+      "s3Bucket": {
+        "deploymentBucketName": "amplify-typeimp-dev-31f08-deployment",
+        "s3Key": "amplify-builds/notesLambda-79566a5131307735732f-build.zip"
+      },
+      "providerMetadata": {
+        "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/function/notesLambda-cloudformation-template.json",
+        "logicalId": "functionnotesLambda"
+      },
+      "lastPushTimeStamp": "2025-06-18T00:46:13.172Z",
+      "output": {
+        "LambdaExecutionRoleArn": "arn:aws:iam::773623060459:role/typeimpLambdaRoleec0d9957-dev",
+        "Region": "us-east-2",
+        "Arn": "arn:aws:lambda:us-east-2:773623060459:function:notesLambda-dev",
+        "Name": "notesLambda-dev",
+        "LambdaExecutionRole": "typeimpLambdaRoleec0d9957-dev"
+      },
+      "lastPushDirHash": "pUv8AhZMe+2pl+rTg/oEVyPa588="
+    }
+  },
+  "api": {
+    "notesApi": {
+      "service": "API Gateway",
+      "providerPlugin": "awscloudformation",
+      "dependsOn": [
+        {
+          "category": "function",
+          "resourceName": "notesLambda",
+          "attributes": [
+            "Name",
+            "Arn"
+          ]
+        }
+      ],
+      "providerMetadata": {
+        "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/api/notesApi-cloudformation-template.json",
+        "logicalId": "apinotesApi"
+      },
+      "lastPushTimeStamp": "2025-06-18T00:46:13.172Z",
+      "output": {
+        "ApiName": "notesApi",
+        "RootUrl": "https://d0czgkcsod.execute-api.us-east-2.amazonaws.com/dev",
+        "ApiId": "d0czgkcsod"
+      },
+      "lastPushDirHash": "gzcz2azVSTEvLoa+RjqkwfO3ssI="
+    }
+  }
+}
