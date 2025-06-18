@@ -1,3 +1,22 @@
 {
-  "lambdaLayers": []
+  "permissions": {
+    "auth": {
+      "typeimp628ba24a": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ]
+    },
+    "storage": {
+      "notesTable": [
+        "create",
+        "read",
+        "update",
+        "delete"
+      ]
+    }
+  },
+  "lambdaLayers": [],
+  "environmentVariableList": []
 }

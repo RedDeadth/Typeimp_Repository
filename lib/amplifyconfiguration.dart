@@ -6,7 +6,7 @@ const amplifyconfig = '''{
             "awsAPIPlugin": {
                 "notesApi": {
                     "endpointType": "REST",
-                    "endpoint": "https://d0czgkcsod.execute-api.us-east-2.amazonaws.com/dev",
+                    "endpoint": "https://jxiehopdvf.execute-api.us-east-2.amazonaws.com/dev",
                     "region": "us-east-2",
                     "authorizationType": "AWS_IAM"
                 }
@@ -58,7 +58,26 @@ const amplifyconfig = '''{
                             "EMAIL"
                         ]
                     }
+                },
+                "DynamoDBObjectMapper": {
+                    "Default": {
+                        "Region": "us-east-2"
+                    }
                 }
+            }
+        }
+    },
+    "storage": {
+        "plugins": {
+            "awsDynamoDbStoragePlugin": {
+                "partitionKeyName": "userId",
+                "sortKeyName": "noteId",
+                "sortKeyType": "S",
+                "region": "us-east-2",
+                "arn": "arn:aws:dynamodb:us-east-2:773623060459:table/notesTable-dev",
+                "streamArn": "arn:aws:dynamodb:us-east-2:773623060459:table/notesTable-dev/stream/2025-06-18T01:33:12.150",
+                "partitionKeyType": "S",
+                "name": "notesTable-dev"
             }
         }
     }

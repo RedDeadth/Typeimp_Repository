@@ -43,7 +43,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/auth/typeimp628ba24a-cloudformation-template.json",
         "logicalId": "authtypeimp628ba24a"
       },
-      "lastPushTimeStamp": "2025-06-18T00:46:09.841Z",
+      "lastPushTimeStamp": "2025-06-18T06:30:24.271Z",
       "output": {
         "UserPoolId": "us-east-2_eh6r88yA6",
         "AppClientIDWeb": "1l2d3gt35bv0oj4scgvggso8g4",
@@ -61,27 +61,45 @@
       "build": true,
       "providerPlugin": "awscloudformation",
       "service": "Lambda",
-      "lastBuildTimeStamp": "2025-06-18T00:43:39.182Z",
+      "dependsOn": [
+        {
+          "category": "auth",
+          "resourceName": "typeimp628ba24a",
+          "attributes": [
+            "UserPoolId"
+          ]
+        },
+        {
+          "category": "storage",
+          "resourceName": "notesTable",
+          "attributes": [
+            "Name",
+            "Arn",
+            "StreamArn"
+          ]
+        }
+      ],
+      "lastBuildTimeStamp": "2025-06-18T06:29:04.226Z",
       "lastBuildType": "PROD",
-      "lastPackageTimeStamp": "2025-06-18T00:43:57.148Z",
-      "distZipFilename": "notesLambda-79566a5131307735732f-build.zip",
+      "lastPackageTimeStamp": "2025-06-18T06:29:07.936Z",
+      "distZipFilename": "notesLambda-4f6478344f786f38332f-build.zip",
       "s3Bucket": {
         "deploymentBucketName": "amplify-typeimp-dev-31f08-deployment",
-        "s3Key": "amplify-builds/notesLambda-79566a5131307735732f-build.zip"
+        "s3Key": "amplify-builds/notesLambda-4f6478344f786f38332f-build.zip"
       },
       "providerMetadata": {
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/function/notesLambda-cloudformation-template.json",
         "logicalId": "functionnotesLambda"
       },
-      "lastPushTimeStamp": "2025-06-18T00:46:13.172Z",
+      "lastPushTimeStamp": "2025-06-18T06:30:26.351Z",
       "output": {
-        "LambdaExecutionRoleArn": "arn:aws:iam::773623060459:role/typeimpLambdaRoleec0d9957-dev",
+        "LambdaExecutionRoleArn": "arn:aws:iam::773623060459:role/typeimpLambdaRole08163802-dev",
         "Region": "us-east-2",
         "Arn": "arn:aws:lambda:us-east-2:773623060459:function:notesLambda-dev",
         "Name": "notesLambda-dev",
-        "LambdaExecutionRole": "typeimpLambdaRoleec0d9957-dev"
+        "LambdaExecutionRole": "typeimpLambdaRole08163802-dev"
       },
-      "lastPushDirHash": "pUv8AhZMe+2pl+rTg/oEVyPa588="
+      "lastPushDirHash": "rnDfIn5FDQocZ0+tVsyF8DLk924="
     }
   },
   "api": {
@@ -102,13 +120,35 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/api/notesApi-cloudformation-template.json",
         "logicalId": "apinotesApi"
       },
-      "lastPushTimeStamp": "2025-06-18T00:46:13.172Z",
+      "lastPushTimeStamp": "2025-06-18T06:30:24.348Z",
       "output": {
         "ApiName": "notesApi",
-        "RootUrl": "https://d0czgkcsod.execute-api.us-east-2.amazonaws.com/dev",
-        "ApiId": "d0czgkcsod"
+        "RootUrl": "https://jxiehopdvf.execute-api.us-east-2.amazonaws.com/dev",
+        "ApiId": "jxiehopdvf"
       },
       "lastPushDirHash": "gzcz2azVSTEvLoa+RjqkwfO3ssI="
+    }
+  },
+  "storage": {
+    "notesTable": {
+      "service": "DynamoDB",
+      "providerPlugin": "awscloudformation",
+      "providerMetadata": {
+        "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/storage/notesTable-cloudformation-template.json",
+        "logicalId": "storagenotesTable"
+      },
+      "lastPushTimeStamp": "2025-06-18T06:30:24.391Z",
+      "output": {
+        "PartitionKeyName": "userId",
+        "SortKeyName": "noteId",
+        "SortKeyType": "S",
+        "Region": "us-east-2",
+        "Arn": "arn:aws:dynamodb:us-east-2:773623060459:table/notesTable-dev",
+        "StreamArn": "arn:aws:dynamodb:us-east-2:773623060459:table/notesTable-dev/stream/2025-06-18T01:33:12.150",
+        "PartitionKeyType": "S",
+        "Name": "notesTable-dev"
+      },
+      "lastPushDirHash": "bOxjnG/2VcuL/suuS1EkpaBWUFU="
     }
   }
 }

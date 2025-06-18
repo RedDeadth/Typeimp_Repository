@@ -16,10 +16,14 @@
       "auth": {
         "typeimp628ba24a": {}
       },
+      "storage": {
+        "notesTable": {}
+      },
       "function": {
         "notesLambda": {
+          "tableName": "${env.STORAGE_NOTESTABLE_NAME}",
           "deploymentBucketName": "amplify-typeimp-dev-31f08-deployment",
-          "s3Key": "amplify-builds/notesLambda-79566a5131307735732f-build.zip"
+          "s3Key": "amplify-builds/notesLambda-4f6478344f786f38332f-build.zip"
         }
       },
       "api": {

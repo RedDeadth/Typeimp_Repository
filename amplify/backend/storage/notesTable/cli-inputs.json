@@ -1,0 +1,26 @@
+{
+  "resourceName": "notesTable",
+  "tableName": "notesTable",
+  "partitionKey": {
+    "fieldName": "userId",
+    "fieldType": "string"
+  },
+  "sortKey": {
+    "fieldName": "noteId",
+    "fieldType": "string"
+  },
+  "gsi": [
+    {
+      "name": "notesByCategory",
+      "partitionKey": {
+        "fieldName": "categoryId",
+        "fieldType": "string"
+      },
+      "sortKey": {
+        "fieldName": "createdAt",
+        "fieldType": "string"
+      }
+    }
+  ],
+  "triggerFunctions": []
+}

@@ -46,6 +46,24 @@
   "function": {
     "notesLambda": {
       "build": true,
+      "dependsOn": [
+        {
+          "attributes": [
+            "UserPoolId"
+          ],
+          "category": "auth",
+          "resourceName": "typeimp628ba24a"
+        },
+        {
+          "attributes": [
+            "Name",
+            "Arn",
+            "StreamArn"
+          ],
+          "category": "storage",
+          "resourceName": "notesTable"
+        }
+      ],
       "providerPlugin": "awscloudformation",
       "service": "Lambda"
     }
@@ -66,6 +84,20 @@
           "resourceName": "notesLambda"
         }
       ]
+    },
+    "AMPLIFY_function_notesLambda_tableName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "notesLambda"
+        }
+      ]
+    }
+  },
+  "storage": {
+    "notesTable": {
+      "providerPlugin": "awscloudformation",
+      "service": "DynamoDB"
     }
   }
 }
