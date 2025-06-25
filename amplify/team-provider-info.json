@@ -17,13 +17,14 @@
         "typeimp628ba24a": {}
       },
       "storage": {
-        "notesTable": {}
+        "notesTable": {},
+        "categoriesTable": {}
       },
       "function": {
         "notesLambda": {
           "tableName": "${env.STORAGE_NOTESTABLE_NAME}",
           "deploymentBucketName": "amplify-typeimp-dev-31f08-deployment",
-          "s3Key": "amplify-builds/notesLambda-4f6478344f786f38332f-build.zip"
+          "s3Key": "amplify-builds/notesLambda-67544d30416b46484f30-build.zip"
         }
       },
       "api": {

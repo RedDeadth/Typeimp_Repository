@@ -27,6 +27,14 @@ export type AmplifyDependentResourcesAttributes = {
     }
   },
   "storage": {
+    "categoriesTable": {
+      "Arn": "string",
+      "Name": "string",
+      "PartitionKeyName": "string",
+      "PartitionKeyType": "string",
+      "Region": "string",
+      "StreamArn": "string"
+    },
     "notesTable": {
       "Arn": "string",
       "Name": "string",

@@ -43,7 +43,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/auth/typeimp628ba24a-cloudformation-template.json",
         "logicalId": "authtypeimp628ba24a"
       },
-      "lastPushTimeStamp": "2025-06-18T06:30:24.271Z",
+      "lastPushTimeStamp": "2025-06-25T19:26:27.284Z",
       "output": {
         "UserPoolId": "us-east-2_eh6r88yA6",
         "AppClientIDWeb": "1l2d3gt35bv0oj4scgvggso8g4",
@@ -77,21 +77,30 @@
             "Arn",
             "StreamArn"
           ]
+        },
+        {
+          "category": "storage",
+          "resourceName": "categoriesTable",
+          "attributes": [
+            "Name",
+            "Arn",
+            "StreamArn"
+          ]
         }
       ],
-      "lastBuildTimeStamp": "2025-06-18T06:29:04.226Z",
+      "lastBuildTimeStamp": "2025-06-25T19:24:12.495Z",
       "lastBuildType": "PROD",
-      "lastPackageTimeStamp": "2025-06-18T06:29:07.936Z",
-      "distZipFilename": "notesLambda-4f6478344f786f38332f-build.zip",
+      "lastPackageTimeStamp": "2025-06-25T19:24:40.652Z",
+      "distZipFilename": "notesLambda-67544d30416b46484f30-build.zip",
       "s3Bucket": {
         "deploymentBucketName": "amplify-typeimp-dev-31f08-deployment",
-        "s3Key": "amplify-builds/notesLambda-4f6478344f786f38332f-build.zip"
+        "s3Key": "amplify-builds/notesLambda-67544d30416b46484f30-build.zip"
       },
       "providerMetadata": {
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/function/notesLambda-cloudformation-template.json",
         "logicalId": "functionnotesLambda"
       },
-      "lastPushTimeStamp": "2025-06-18T06:30:26.351Z",
+      "lastPushTimeStamp": "2025-06-25T19:26:29.310Z",
       "output": {
         "LambdaExecutionRoleArn": "arn:aws:iam::773623060459:role/typeimpLambdaRole08163802-dev",
         "Region": "us-east-2",
@@ -99,7 +108,7 @@
         "Name": "notesLambda-dev",
         "LambdaExecutionRole": "typeimpLambdaRole08163802-dev"
       },
-      "lastPushDirHash": "rnDfIn5FDQocZ0+tVsyF8DLk924="
+      "lastPushDirHash": "Ao0CJnDEtk9jHKfajSof6oMtXls="
     }
   },
   "api": {
@@ -120,7 +129,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/api/notesApi-cloudformation-template.json",
         "logicalId": "apinotesApi"
       },
-      "lastPushTimeStamp": "2025-06-18T06:30:24.348Z",
+      "lastPushTimeStamp": "2025-06-25T19:26:27.334Z",
       "output": {
         "ApiName": "notesApi",
         "RootUrl": "https://jxiehopdvf.execute-api.us-east-2.amazonaws.com/dev",
@@ -137,7 +146,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/storage/notesTable-cloudformation-template.json",
         "logicalId": "storagenotesTable"
       },
-      "lastPushTimeStamp": "2025-06-18T06:30:24.391Z",
+      "lastPushTimeStamp": "2025-06-25T19:26:27.416Z",
       "output": {
         "PartitionKeyName": "userId",
         "SortKeyName": "noteId",
@@ -149,6 +158,24 @@
         "Name": "notesTable-dev"
       },
       "lastPushDirHash": "bOxjnG/2VcuL/suuS1EkpaBWUFU="
+    },
+    "categoriesTable": {
+      "service": "DynamoDB",
+      "providerPlugin": "awscloudformation",
+      "providerMetadata": {
+        "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/storage/categoriesTable-cloudformation-template.json",
+        "logicalId": "storagecategoriesTable"
+      },
+      "lastPushTimeStamp": "2025-06-25T19:26:29.310Z",
+      "output": {
+        "PartitionKeyName": "categoryId",
+        "Region": "us-east-2",
+        "Arn": "arn:aws:dynamodb:us-east-2:773623060459:table/categoriesTable-dev",
+        "StreamArn": "arn:aws:dynamodb:us-east-2:773623060459:table/categoriesTable-dev/stream/2025-06-25T19:24:56.534",
+        "PartitionKeyType": "S",
+        "Name": "categoriesTable-dev"
+      },
+      "lastPushDirHash": "EJa++HUJ5QMn1I1yfCU3vrpHfOc="
     }
   }
 }

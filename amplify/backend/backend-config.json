@@ -62,6 +62,15 @@
           ],
           "category": "storage",
           "resourceName": "notesTable"
+        },
+        {
+          "attributes": [
+            "Name",
+            "Arn",
+            "StreamArn"
+          ],
+          "category": "storage",
+          "resourceName": "categoriesTable"
         }
       ],
       "providerPlugin": "awscloudformation",
@@ -95,6 +104,10 @@
     }
   },
   "storage": {
+    "categoriesTable": {
+      "providerPlugin": "awscloudformation",
+      "service": "DynamoDB"
+    },
     "notesTable": {
       "providerPlugin": "awscloudformation",
       "service": "DynamoDB"

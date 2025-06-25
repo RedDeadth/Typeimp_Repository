@@ -14,6 +14,12 @@
         "read",
         "update",
         "delete"
+      ],
+      "categoriesTable": [
+        "create",
+        "read",
+        "update",
+        "delete"
       ]
     }
   },

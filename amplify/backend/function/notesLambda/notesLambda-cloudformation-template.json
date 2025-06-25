@@ -34,6 +34,18 @@
     "storagenotesTableStreamArn": {
       "Type": "String",
       "Default": "storagenotesTableStreamArn"
+    },
+    "storagecategoriesTableName": {
+      "Type": "String",
+      "Default": "storagecategoriesTableName"
+    },
+    "storagecategoriesTableArn": {
+      "Type": "String",
+      "Default": "storagecategoriesTableArn"
+    },
+    "storagecategoriesTableStreamArn": {
+      "Type": "String",
+      "Default": "storagecategoriesTableStreamArn"
     }
   },
   "Conditions": {
@@ -103,6 +115,15 @@
             },
             "TABLE_NAME": {
               "Ref": "tableName"
+            },
+            "STORAGE_CATEGORIESTABLE_NAME": {
+              "Ref": "storagecategoriesTableName"
+            },
+            "STORAGE_CATEGORIESTABLE_ARN": {
+              "Ref": "storagecategoriesTableArn"
+            },
+            "STORAGE_CATEGORIESTABLE_STREAMARN": {
+              "Ref": "storagecategoriesTableStreamArn"
             }
           }
         },
@@ -351,6 +372,43 @@
                     [
                       {
                         "Ref": "storagenotesTableArn"
+                      },
+                      "index/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "dynamodb:Put*",
+                "dynamodb:Create*",
+                "dynamodb:BatchWriteItem",
+                "dynamodb:PartiQLInsert",
+                "dynamodb:Get*",
+                "dynamodb:BatchGetItem",
+                "dynamodb:List*",
+                "dynamodb:Describe*",
+                "dynamodb:Scan",
+                "dynamodb:Query",
+                "dynamodb:PartiQLSelect",
+                "dynamodb:Update*",
+                "dynamodb:RestoreTable*",
+                "dynamodb:PartiQLUpdate",
+                "dynamodb:Delete*",
+                "dynamodb:PartiQLDelete"
+              ],
+              "Resource": [
+                {
+                  "Ref": "storagecategoriesTableArn"
+                },
+                {
+                  "Fn::Join": [
+                    "/",
+                    [
+                      {
+                        "Ref": "storagecategoriesTableArn"
                       },
                       "index/*"
                     ]
