@@ -70,10 +70,12 @@ const amplifyconfig = '''{
     "storage": {
         "plugins": {
             "awsDynamoDbStoragePlugin": {
-                "partitionKeyName": "categoryId",
+                "partitionKeyName": "userId",
+                "sortKeyName": "categoryId",
+                "sortKeyType": "S",
                 "region": "us-east-2",
                 "arn": "arn:aws:dynamodb:us-east-2:773623060459:table/categoriesTable-dev",
-                "streamArn": "arn:aws:dynamodb:us-east-2:773623060459:table/categoriesTable-dev/stream/2025-06-25T19:24:56.534",
+                "streamArn": "arn:aws:dynamodb:us-east-2:773623060459:table/categoriesTable-dev/stream/2025-06-28T04:53:15.572",
                 "partitionKeyType": "S",
                 "name": "categoriesTable-dev"
             }

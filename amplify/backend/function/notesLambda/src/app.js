@@ -280,37 +280,6 @@ app.delete('/notes/:id', async function(req, res) {
   }
 });
 
-app.listen(3000, function() {
-    console.log("App started")
-});
-
-app.get('/notes', async function(req, res) {
-  console.log('GET /notes - Starting request');
-  
-  const userId = getUserId(req);
-  if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized: User ID not found.' });
-  }
-
-  const params = {
-      TableName: tableName,
-      KeyConditionExpression: 'userId = :u',
-      ExpressionAttributeValues: {
-          ':u': userId,
-      },
-  };
-
-  try {
-      console.log('Querying DynamoDB with params:', JSON.stringify(params, null, 2));
-      const data = await ddb.send(new QueryCommand(params));
-      console.log('Query result:', JSON.stringify(data, null, 2));
-      res.json({ success: true, notes: data.Items });
-  } catch (err) {
-      console.error('Error retrieving notes:', err);
-      res.status(500).json({ error: 'Could not retrieve notes: ' + err.message });
-  }
-});
-
 /**********************
  * GET /categories - Get all categories for the authenticated user *
  **********************/
@@ -476,7 +445,7 @@ app.delete('/categories/:id', async function(req, res) {
   const categoryIdToDelete = req.params.id;
 
   try {
-    // 1. Verificar si la categoría existe y pertenece al usuario
+    // 1. Verificar si la categoría existe
     const getCategoryParams = {
       TableName: categoriesTableName,
       Key: {
@@ -486,14 +455,15 @@ app.delete('/categories/:id', async function(req, res) {
     };
     const categoryData = await ddb.send(new GetCommand(getCategoryParams));
     if (!categoryData.Item) {
-      return res.status(404).json({ error: 'Category not found or you do not have permission to delete it.' });
+      return res.status(404).json({ error: 'Category not found.' });
     }
 
-    // 2. Encontrar todas las notas asociadas a esta categoría para este usuario
+    // 2. Buscar notas de este usuario y filtrar por categoría
     const queryNotesParams = {
-      TableName: notesTableName,
-      IndexName: 'categoryIndex', // NECESITAREMOS UN GSI PARA ESTO. Ver NOTA IMPORTANTE abajo.
-      KeyConditionExpression: 'userId = :u AND categoryId = :c',
+      TableName: tableName, // notesTable
+      IndexName: 'notesByCategory', // <--- ESTO ES CRUCIAL
+      KeyConditionExpression: 'categoryId = :c', // <-- PK del GSI
+      FilterExpression: 'userId = :u', // <-- Filtro sobre el GSI
       ExpressionAttributeValues: {
         ':u': userId,
         ':c': categoryIdToDelete,
@@ -501,52 +471,34 @@ app.delete('/categories/:id', async function(req, res) {
     };
     const associatedNotes = await ddb.send(new QueryCommand(queryNotesParams));
 
-    // 3. Eliminar notas asociadas en lotes (BatchWriteCommand soporta hasta 25 elementos)
+    // 3. Eliminar notas asociadas una por una (más simple)
     if (associatedNotes.Items && associatedNotes.Items.length > 0) {
-      const deleteRequests = associatedNotes.Items.map(note => ({
-        DeleteRequest: {
+      for (const note of associatedNotes.Items) {
+        await ddb.send(new DeleteCommand({
+          TableName: tableName,
           Key: {
             'userId': note.userId,
             'noteId': note.noteId
           }
-        }
-      }));
-
-      // Dividir en lotes de 25 si hay muchas notas
-      const batchSize = 25;
-      for (let i = 0; i < deleteRequests.length; i += batchSize) {
-        const batch = deleteRequests.slice(i, i + batchSize);
-        await ddb.send(new BatchWriteCommand({
-          RequestItems: {
-            [notesTableName]: batch
-          }
         }));
-        console.log(`Deleted batch of ${batch.length} notes for category ${categoryIdToDelete}`);
       }
     }
 
     // 4. Eliminar la categoría
-    const deleteCategoryParams = {
+    await ddb.send(new DeleteCommand({
       TableName: categoriesTableName,
       Key: {
         'userId': userId,
         'categoryId': categoryIdToDelete
-      },
-      ConditionExpression: 'attribute_exists(categoryId)' // Asegura que aún exista (aunque ya la verificamos)
-    };
-    await ddb.send(new DeleteCommand(deleteCategoryParams));
+      }
+    }));
 
     res.json({ success: true, message: 'Category and associated notes deleted successfully.' });
 
   } catch (err) {
-    console.error('Error deleting category or associated notes:', err);
+    console.error('Error deleting category:', err);
     res.status(500).json({ error: 'Could not delete category: ' + err.message });
   }
-});
-
-
-app.listen(3000, function() {
-    console.log("App started")
 });
 
 module.exports = app

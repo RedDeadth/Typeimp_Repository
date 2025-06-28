@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
-import 'AuthScreen.dart';
+import 'AuthScreen.dart'; 
 import 'dart:convert';
-import 'Note.dart';
+import 'Note.dart'; 
+import 'AppCategory.dart'; 
+import 'CategoryManagment.dart';
+import 'AddEditNoteDialog.dart';
+
+// AddEditNoteDialog - Si está en un archivo separado, asegúrate de importarlo aquí
+// import 'AddEditNoteDialog.dart'; // Descomenta si AddEditNoteDialog está en un archivo separado
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,19 +19,30 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List<Note> _notes = [];
+  List<AppCategory> _categories = []; // *** CAMBIADO A AppCategory ***
   bool _isLoading = true;
-  String _selectedCategory = 'All'; // Para filtrar por categoría
-  // Listado de categorías disponibles (podrías obtenerlas dinámicamente)
-  final List<String> _categories = ['All', 'Work', 'Personal', 'Ideas', 'Uncategorized'];
+  String _selectedCategoryFilter = 'All'; // Para filtrar por categoría (ID o nombre)
 
   @override
   void initState() {
     super.initState();
-    _fetchNotes(); // Cargar notas al iniciar la pantalla
+    _initializeAppAndFetchData();
+  }
+
+  Future<void> _initializeAppAndFetchData() async {
+    setState(() {
+      _isLoading = true;
+    });
+    await Future.wait([
+      _fetchCategories(),
+      _fetchNotes(),
+    ]);
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   Future<void> _signOut(BuildContext context) async {
-    // ... tu código de signOut existente
     try {
       await Amplify.Auth.signOut();
       Navigator.of(context).pushReplacement(
@@ -33,13 +50,49 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     } on AuthException catch (e) {
       safePrint('Error al cerrar sesión: ${e.message}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cerrar sesión: ${e.message}')),
+      );
     }
   }
 
+  // --- Métodos para Categorías ---
+  Future<void> _fetchCategories() async {
+    try {
+      final restOperation = Amplify.API.get(
+        '/categories',
+        apiName: 'notesApi',
+      );
+      final response = await restOperation.response;
+      safePrint('GET /categories response: ${response.statusCode} - ${response.decodeBody()}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseBody = jsonDecode(response.decodeBody());
+        final List<dynamic> categoriesJson = responseBody['categories'];
+        setState(() {
+          _categories = categoriesJson.map((json) => AppCategory.fromJson(json)).toList(); // *** CAMBIADO A AppCategory ***
+        });
+      } else {
+        safePrint('Failed to load categories: ${response.statusCode}');
+      }
+    } on ApiException catch (e) {
+      safePrint('GET /categories failed: ${e.message}');
+    }
+  }
+
+  Future<void> _manageCategories() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => CategoryManagementScreen( // *** Ya no es "método", sino clase ***
+          onCategoriesUpdated: _fetchCategories,
+        ),
+      ),
+    );
+    _fetchNotes(); 
+  }
+
+  // --- Métodos para Notas (con actualizaciones para categoría) ---
   Future<void> _fetchNotes() async {
-    setState(() {
-      _isLoading = true;
-    });
     try {
       final restOperation = Amplify.API.get(
         '/notes',
@@ -53,30 +106,31 @@ class _HomeScreenState extends State<HomeScreen> {
         final List<dynamic> notesJson = responseBody['notes'];
         setState(() {
           _notes = notesJson.map((json) => Note.fromJson(json)).toList();
-          // Ordenar por fecha de creación por defecto (más reciente primero)
           _notes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         });
       } else {
         safePrint('Failed to load notes: ${response.statusCode}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar notas: ${response.decodeBody()}')),
+        );
       }
     } on ApiException catch (e) {
       safePrint('GET failed: ${e.message}');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error de API: ${e.message}')),
+      );
     }
   }
 
   Future<void> _addNote() async {
-    // Implementar un showDialog o showModalBottomSheet con un formulario
     final result = await showDialog<Map<String, String>>(
       context: context,
-      builder: (context) => AddEditNoteDialog(
+      builder: (context) => AddEditNoteDialog( // *** Ya no es "método", sino clase ***
         initialTitle: '',
         initialContent: '',
         initialCategory: 'Uncategorized',
         isEdit: false,
+        availableCategories: _categories,
       ),
     );
 
@@ -93,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Nota creada con éxito!')),
           );
-          _fetchNotes(); // Recargar notas
+          _fetchNotes();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error al crear nota: ${response.decodeBody()}')),
@@ -111,18 +165,19 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _editNote(Note note) async {
     final result = await showDialog<Map<String, String>>(
       context: context,
-      builder: (context) => AddEditNoteDialog(
+      builder: (context) => AddEditNoteDialog( // *** Ya no es "método", sino clase ***
         initialTitle: note.title,
         initialContent: note.content,
         initialCategory: note.categoryId,
         isEdit: true,
+        availableCategories: _categories,
       ),
     );
 
     if (result != null) {
       try {
         final restOperation = Amplify.API.put(
-          '/notes/${note.noteId}', // Usar el ID de la nota
+          '/notes/${note.noteId}',
           apiName: 'notesApi',
           body: HttpPayload.json(result),
         );
@@ -132,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Nota actualizada con éxito!')),
           );
-          _fetchNotes(); // Recargar notas
+          _fetchNotes();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error al actualizar nota: ${response.decodeBody()}')),
@@ -178,7 +233,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Nota eliminada con éxito!')),
           );
-          _fetchNotes(); // Recargar notas
+          _fetchNotes();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error al eliminar nota: ${response.decodeBody()}')),
@@ -195,36 +250,47 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Método para filtrar notas por categoría
   List<Note> get _filteredNotes {
-    if (_selectedCategory == 'All') {
+    if (_selectedCategoryFilter == 'All') {
       return _notes;
     }
-    return _notes.where((note) => note.categoryId == _selectedCategory).toList();
+    return _notes.where((note) => note.categoryId == _selectedCategoryFilter).toList();
   }
 
 
   @override
   Widget build(BuildContext context) {
+    final List<DropdownMenuItem<String>> categoryFilterItems = [
+      const DropdownMenuItem<String>(value: 'All', child: Text('Todas las Categorías')),
+      // Asegúrate de que 'Uncategorized' esté en la lista si no viene del backend
+      // Esto es crucial para notas antiguas que no tienen categoryId o tienen 'Uncategorized'
+      const DropdownMenuItem<String>(value: 'Uncategorized', child: Text('Sin Categoría')),
+      ..._categories.map<DropdownMenuItem<String>>((AppCategory category) { // *** CAMBIADO A AppCategory ***
+        return DropdownMenuItem<String>(
+          value: category.categoryId,
+          child: Text(category.name),
+        );
+      }),
+    ];
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notas App (Bienvenido!)'),
         actions: [
-          // Dropdown para filtrar por categoría
-          DropdownButton<String>(
-            value: _selectedCategory,
-            onChanged: (String? newValue) {
-              setState(() {
-                _selectedCategory = newValue!;
-                // Aquí, si tu API soporta filtrar por categoría en el backend,
-                // harías una nueva _fetchNotes(categoryId: newValue);
-                // Por ahora, solo filtraremos el cliente.
-              });
-            },
-            items: _categories.map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
+          DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _selectedCategoryFilter,
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedCategoryFilter = newValue!;
+                });
+              },
+              items: categoryFilterItems,
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.category),
+            tooltip: 'Gestionar Categorías',
+            onPressed: _manageCategories,
           ),
           IconButton(
             icon: const Icon(Icons.logout),
@@ -235,165 +301,55 @@ class _HomeScreenState extends State<HomeScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _notes.isEmpty
-              ? const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('¡Has iniciado sesión con éxito!'),
-                      Text('No tienes notas aún. Crea una nueva.'),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: _filteredNotes.length,
-                  itemBuilder: (context, index) {
-                    final note = _filteredNotes[index];
-                    return Card(
-                      margin: const EdgeInsets.all(8.0),
-                      child: ListTile(
-                        title: Text(note.title),
-                        subtitle: Text(note.content),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit),
-                              onPressed: () => _editNote(note),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () => _deleteNote(note.noteId),
-                            ),
-                          ],
+                ? const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('¡Has iniciado sesión con éxito!'),
+                        Text('No tienes notas aún. Crea una nueva.'),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: _filteredNotes.length,
+                    itemBuilder: (context, index) {
+                      final note = _filteredNotes[index];
+                      final categoryName = _categories
+                              .firstWhere(
+                                (cat) => cat.categoryId == note.categoryId,
+                                orElse: () => AppCategory(userId: '', categoryId: 'Uncategorized', name: 'Sin Categoría', createdAt: '', updatedAt: ''), // *** CAMBIADO A AppCategory ***
+                              )
+                              .name;
+
+                      return Card(
+                        margin: const EdgeInsets.all(8.0),
+                        child: ListTile(
+                          title: Text(note.title),
+                          subtitle: Text('${note.content}\nCategoría: $categoryName'),
+                          isThreeLine: true,
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit),
+                                onPressed: () => _editNote(note),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () => _deleteNote(note.noteId),
+                              ),
+                            ],
+                          ),
+                          onTap: () {
+                          },
                         ),
-                        // Puedes añadir más detalles como categoría y fechas
-                        onTap: () {
-                          // Opcional: ver detalles completos de la nota
-                        },
-                      ),
-                    );
-                  },
-                ),
+                      );
+                    },
+                  ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addNote,
         child: const Icon(Icons.add),
       ),
-    );
-  }
-}
-
-// Dialogo para Añadir/Editar Nota
-class AddEditNoteDialog extends StatefulWidget {
-  final String initialTitle;
-  final String initialContent;
-  final String initialCategory;
-  final bool isEdit;
-
-  const AddEditNoteDialog({
-    super.key,
-    required this.initialTitle,
-    required this.initialContent,
-    required this.initialCategory,
-    required this.isEdit,
-  });
-
-  @override
-  State<AddEditNoteDialog> createState() => _AddEditNoteDialogState();
-}
-
-class _AddEditNoteDialogState extends State<AddEditNoteDialog> {
-  final _formKey = GlobalKey<FormState>();
-  late TextEditingController _titleController;
-  late TextEditingController _contentController;
-  late String _selectedCategory; // Para el dropdown de categoría
-
-  // Listado de categorías disponibles (debería ser el mismo que en HomeScreen)
-  final List<String> _categories = ['Work', 'Personal', 'Ideas', 'Uncategorized'];
-
-
-  @override
-  void initState() {
-    super.initState();
-    _titleController = TextEditingController(text: widget.initialTitle);
-    _contentController = TextEditingController(text: widget.initialContent);
-    _selectedCategory = widget.initialCategory;
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _contentController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.isEdit ? 'Editar Nota' : 'Añadir Nueva Nota'),
-      content: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Título'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, ingresa un título';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _contentController,
-                decoration: const InputDecoration(labelText: 'Contenido'),
-                maxLines: 5,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, ingresa el contenido de la nota';
-                  }
-                  return null;
-                },
-              ),
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: const InputDecoration(labelText: 'Categoría'),
-                items: _categories.map((String category) {
-                  return DropdownMenuItem<String>(
-                    value: category,
-                    child: Text(category),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedCategory = newValue!;
-                  });
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              Navigator.of(context).pop({
-                'title': _titleController.text,
-                'content': _contentController.text,
-                'categoryId': _selectedCategory,
-              });
-            }
-          },
-          child: Text(widget.isEdit ? 'Guardar Cambios' : 'Añadir Nota'),
-        ),
-      ],
     );
   }
 }

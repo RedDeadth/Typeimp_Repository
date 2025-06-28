@@ -43,7 +43,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/auth/typeimp628ba24a-cloudformation-template.json",
         "logicalId": "authtypeimp628ba24a"
       },
-      "lastPushTimeStamp": "2025-06-25T19:26:27.284Z",
+      "lastPushTimeStamp": "2025-06-28T18:22:12.623Z",
       "output": {
         "UserPoolId": "us-east-2_eh6r88yA6",
         "AppClientIDWeb": "1l2d3gt35bv0oj4scgvggso8g4",
@@ -88,19 +88,19 @@
           ]
         }
       ],
-      "lastBuildTimeStamp": "2025-06-25T19:24:12.495Z",
+      "lastBuildTimeStamp": "2025-06-28T05:33:13.045Z",
       "lastBuildType": "PROD",
-      "lastPackageTimeStamp": "2025-06-25T19:24:40.652Z",
-      "distZipFilename": "notesLambda-67544d30416b46484f30-build.zip",
+      "lastPackageTimeStamp": "2025-06-28T05:33:27.307Z",
+      "distZipFilename": "notesLambda-4a514a61486335364f6b-build.zip",
       "s3Bucket": {
         "deploymentBucketName": "amplify-typeimp-dev-31f08-deployment",
-        "s3Key": "amplify-builds/notesLambda-67544d30416b46484f30-build.zip"
+        "s3Key": "amplify-builds/notesLambda-4a514a61486335364f6b-build.zip"
       },
       "providerMetadata": {
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/function/notesLambda-cloudformation-template.json",
         "logicalId": "functionnotesLambda"
       },
-      "lastPushTimeStamp": "2025-06-25T19:26:29.310Z",
+      "lastPushTimeStamp": "2025-06-28T18:22:12.631Z",
       "output": {
         "LambdaExecutionRoleArn": "arn:aws:iam::773623060459:role/typeimpLambdaRole08163802-dev",
         "Region": "us-east-2",
@@ -108,7 +108,7 @@
         "Name": "notesLambda-dev",
         "LambdaExecutionRole": "typeimpLambdaRole08163802-dev"
       },
-      "lastPushDirHash": "Ao0CJnDEtk9jHKfajSof6oMtXls="
+      "lastPushDirHash": "mYz9WIBZPuO1AGSh+1QXBN1rGB8="
     }
   },
   "api": {
@@ -129,7 +129,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/api/notesApi-cloudformation-template.json",
         "logicalId": "apinotesApi"
       },
-      "lastPushTimeStamp": "2025-06-25T19:26:27.334Z",
+      "lastPushTimeStamp": "2025-06-28T18:22:12.664Z",
       "output": {
         "ApiName": "notesApi",
         "RootUrl": "https://jxiehopdvf.execute-api.us-east-2.amazonaws.com/dev",
@@ -146,7 +146,7 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/storage/notesTable-cloudformation-template.json",
         "logicalId": "storagenotesTable"
       },
-      "lastPushTimeStamp": "2025-06-25T19:26:27.416Z",
+      "lastPushTimeStamp": "2025-06-28T18:22:12.697Z",
       "output": {
         "PartitionKeyName": "userId",
         "SortKeyName": "noteId",
@@ -166,16 +166,18 @@
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-typeimp-dev-31f08-deployment/amplify-cfn-templates/storage/categoriesTable-cloudformation-template.json",
         "logicalId": "storagecategoriesTable"
       },
-      "lastPushTimeStamp": "2025-06-25T19:26:29.310Z",
+      "lastPushTimeStamp": "2025-06-28T18:22:12.729Z",
       "output": {
-        "PartitionKeyName": "categoryId",
+        "PartitionKeyName": "userId",
+        "SortKeyName": "categoryId",
+        "SortKeyType": "S",
         "Region": "us-east-2",
         "Arn": "arn:aws:dynamodb:us-east-2:773623060459:table/categoriesTable-dev",
-        "StreamArn": "arn:aws:dynamodb:us-east-2:773623060459:table/categoriesTable-dev/stream/2025-06-25T19:24:56.534",
+        "StreamArn": "arn:aws:dynamodb:us-east-2:773623060459:table/categoriesTable-dev/stream/2025-06-28T04:53:15.572",
         "PartitionKeyType": "S",
         "Name": "categoriesTable-dev"
       },
-      "lastPushDirHash": "EJa++HUJ5QMn1I1yfCU3vrpHfOc="
+      "lastPushDirHash": "qjIWtcXbDIFFL1kKBp4ijImXV5c="
     }
   }
 }

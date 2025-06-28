@@ -2,6 +2,10 @@
   "resourceName": "categoriesTable",
   "tableName": "categoriesTable",
   "partitionKey": {
+    "fieldName": "userId",
+    "fieldType": "string"
+  },
+  "sortKey": {
     "fieldName": "categoryId",
     "fieldType": "string"
   },
