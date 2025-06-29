@@ -38,8 +38,23 @@ const amplifyconfig = '''{
                 },
                 "Auth": {
                     "Default": {
+                        "OAuth": {
+                            "WebDomain": "typeimp3fa47cfd-3fa47cfd-dev.auth.us-east-2.amazoncognito.com",
+                            "AppClientId": "6ls9hkladcpf31qg4n5ncfbeim",
+                            "SignInRedirectURI": "https://typeimp3fa47cfd-3fa47cfd-dev.auth.us-east-2.amazoncognito.com/oauth2/idpresponse,http://localhost:8000/,myapp://,exp://",
+                            "SignOutRedirectURI": "https://typeimp3fa47cfd-3fa47cfd-dev.auth.us-east-2.amazoncognito.com/oauth2/idpresponse,http://localhost:8000/,myapp://,exp://",
+                            "Scopes": [
+                                "phone",
+                                "email",
+                                "openid",
+                                "profile",
+                                "aws.cognito.signin.user.admin"
+                            ]
+                        },
                         "authenticationFlowType": "USER_SRP_AUTH",
-                        "socialProviders": [],
+                        "socialProviders": [
+                            "GOOGLE"
+                        ],
                         "usernameAttributes": [
                             "EMAIL"
                         ],

@@ -24,7 +24,7 @@
         "notesLambda": {
           "tableName": "${env.STORAGE_NOTESTABLE_NAME}",
           "deploymentBucketName": "amplify-typeimp-dev-31f08-deployment",
-          "s3Key": "amplify-builds/notesLambda-4a514a61486335364f6b-build.zip"
+          "s3Key": "amplify-builds/notesLambda-456d314152596d386832-build.zip"
         }
       },
       "api": {
