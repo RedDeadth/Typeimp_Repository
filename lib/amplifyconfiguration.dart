@@ -41,8 +41,8 @@ const amplifyconfig = '''{
                         "OAuth": {
                             "WebDomain": "typeimp3fa47cfd-3fa47cfd-dev.auth.us-east-2.amazoncognito.com",
                             "AppClientId": "6ls9hkladcpf31qg4n5ncfbeim",
-                            "SignInRedirectURI": "https://typeimp3fa47cfd-3fa47cfd-dev.auth.us-east-2.amazoncognito.com/oauth2/idpresponse,http://localhost:8000/,myapp://,exp://",
-                            "SignOutRedirectURI": "https://typeimp3fa47cfd-3fa47cfd-dev.auth.us-east-2.amazoncognito.com/oauth2/idpresponse,http://localhost:8000/,myapp://,exp://",
+                            "SignInRedirectURI": "https://typeimp3fa47cfd-3fa47cfd-dev.auth.us-east-2.amazoncognito.com/oauth2/idpresponse,http://localhost:8000/,myapp://callback/,exp://",
+                            "SignOutRedirectURI": "https://typeimp3fa47cfd-3fa47cfd-dev.auth.us-east-2.amazoncognito.com/oauth2/idpresponse,http://localhost:8000/,myapp://signout/,exp://",
                             "Scopes": [
                                 "phone",
                                 "email",
