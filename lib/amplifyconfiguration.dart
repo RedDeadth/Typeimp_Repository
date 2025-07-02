@@ -38,8 +38,23 @@ const amplifyconfig = '''{
                 },
                 "Auth": {
                     "Default": {
+                        "OAuth": {
+                            "WebDomain": "typeimp3fa47cfd-3fa47cfd-dev.auth.us-east-2.amazoncognito.com",
+                            "AppClientId": "6ls9hkladcpf31qg4n5ncfbeim",
+                            "SignInRedirectURI": "https://typeimp3fa47cfd-3fa47cfd-dev.auth.us-east-2.amazoncognito.com/oauth2/idpresponse,http://localhost:8000/,myapp://callback/,exp://",
+                            "SignOutRedirectURI": "https://typeimp3fa47cfd-3fa47cfd-dev.auth.us-east-2.amazoncognito.com/oauth2/idpresponse,http://localhost:8000/,myapp://signout/,exp://",
+                            "Scopes": [
+                                "phone",
+                                "email",
+                                "openid",
+                                "profile",
+                                "aws.cognito.signin.user.admin"
+                            ]
+                        },
                         "authenticationFlowType": "USER_SRP_AUTH",
-                        "socialProviders": [],
+                        "socialProviders": [
+                            "GOOGLE"
+                        ],
                         "usernameAttributes": [
                             "EMAIL"
                         ],
@@ -71,13 +86,13 @@ const amplifyconfig = '''{
         "plugins": {
             "awsDynamoDbStoragePlugin": {
                 "partitionKeyName": "userId",
-                "sortKeyName": "noteId",
+                "sortKeyName": "categoryId",
                 "sortKeyType": "S",
                 "region": "us-east-2",
-                "arn": "arn:aws:dynamodb:us-east-2:773623060459:table/notesTable-dev",
-                "streamArn": "arn:aws:dynamodb:us-east-2:773623060459:table/notesTable-dev/stream/2025-06-18T01:33:12.150",
+                "arn": "arn:aws:dynamodb:us-east-2:773623060459:table/categoriesTable-dev",
+                "streamArn": "arn:aws:dynamodb:us-east-2:773623060459:table/categoriesTable-dev/stream/2025-06-28T04:53:15.572",
                 "partitionKeyType": "S",
-                "name": "notesTable-dev"
+                "name": "categoriesTable-dev"
             }
         }
     }

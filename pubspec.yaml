@@ -33,6 +33,7 @@ dependencies:
   amplify_flutter: ^2.6.3
   amplify_auth_cognito: ^2.6.3
   amplify_api: ^2.6.3
+  provider: ^6.0.5
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
@@ -51,6 +52,9 @@ dependencies:
 # The following section is specific to Flutter packages.
 flutter:
   uses-material-design: true
+  
+  assets:
+    - assets/app_icon.jpeg
 
   fonts:
     - family: Poppins

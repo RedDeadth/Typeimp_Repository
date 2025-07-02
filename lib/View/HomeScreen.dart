@@ -1,62 +1,14 @@
+// lib/View/HomeScreen.dart
 import 'package:flutter/material.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'AuthScreen.dart';
 import 'dart:convert';
-import 'Note.dart'; // Asume que tienes un archivo Note.dart con la clase Note
-
-// --- Extensión para oscurecer/aclarar colores (mantener) ---
-extension ColorExtension on Color {
-  Color darken([double amount = .1]) {
-    assert(amount >= 0 && amount <= 1);
-    final hsl = HSLColor.fromColor(this);
-    final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
-    return hslDark.toColor();
-  }
-
-  Color lighten([double amount = .1]) {
-    assert(amount >= 0 && amount <= 1);
-    final hsl = HSLColor.fromColor(this);
-    final hslLight = hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0));
-    return hslLight.toColor();
-  }
-}
-// --- Fin de extensión ---
-
-const List<String> kNoteCategoriesUI = [
-  'Todas las Notas',
-  'Trabajo',
-  'Personal',
-  'Ideas',
-  'Recordatorios',
-];
-
-String mapCategoryToBackend(String uiCategory) {
-  switch (uiCategory) {
-    case 'Trabajo':
-      return 'Work';
-    case 'Recordatorios':
-      return 'Uncategorized';
-    case 'Todas las Notas':
-      return 'All';
-    default:
-      return uiCategory;
-  }
-}
-
-String mapCategoryToUI(String backendCategory) {
-  switch (backendCategory) {
-    case 'Work':
-      return 'Trabajo';
-    case 'Personal':
-      return 'Personal';
-    case 'Ideas':
-      return 'Ideas';
-    case 'Uncategorized':
-      return 'Recordatorios';
-    default:
-      return 'Sin Categoría';
-  }
-}
+import 'Note.dart';
+import 'NoteDetailScreen.dart';
+import '../utils/app_constants.dart';
+import 'package:typeimp_tecsuproject01/View/_NoteCard.dart';
+import 'package:typeimp_tecsuproject01/View/_HomeDrawer.dart';
+import 'package:typeimp_tecsuproject01/View/_HomeAppBar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -70,14 +22,21 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   String _selectedCategory = kNoteCategoriesUI[0];
   final TextEditingController _searchController = TextEditingController();
-  String _userName = 'Usuario Genial';
+  String _userName = 'Cargando...';
   Color _backgroundColor = Colors.grey[50]!;
+
+  Set<String> _loadingNoteIds = {};
 
   @override
   void initState() {
     super.initState();
     _fetchNotes();
     _fetchUserName();
+    _searchController.addListener(() {
+      setState(() {
+        // Forzar reconstrucción cuando cambia el texto de búsqueda
+      });
+    });
   }
 
   @override
@@ -88,17 +47,54 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchUserName() async {
     try {
-      final user = await Amplify.Auth.getCurrentUser();
+      final userAttributes = await Amplify.Auth.fetchUserAttributes();
+      String displayName = 'Usuario';
+
+      for (var attribute in userAttributes) {
+        if (attribute.userAttributeKey.key == 'name') {
+          displayName = attribute.value;
+          break;
+        }
+      }
+
+      if (displayName == 'Usuario') {
+        for (var attribute in userAttributes) {
+          if (attribute.userAttributeKey.key == 'preferred_username') {
+            displayName = attribute.value;
+            break;
+          }
+        }
+      }
+
+      if (displayName == 'Usuario') {
+        for (var attribute in userAttributes) {
+          if (attribute.userAttributeKey.key == 'email') {
+            displayName = attribute.value;
+            break;
+          }
+        }
+      }
+
+      if (displayName == 'Usuario') {
+          final user = await Amplify.Auth.getCurrentUser();
+          displayName = user.username;
+      }
+
+      int atIndex = displayName.indexOf('@');
+      if (atIndex != -1) { // Si se encuentra un '@'
+        displayName = displayName.substring(0, atIndex);
+      }
+
       if (mounted) {
         setState(() {
-          _userName = user.username;
+          _userName = displayName;
         });
       }
     } on AuthException catch (e) {
-      safePrint('Error al obtener el usuario actual: ${e.message}');
+      safePrint('Error al obtener los atributos del usuario: ${e.message}');
       if (mounted) {
         setState(() {
-          _userName = 'Usuario';
+          _userName = 'Error';
         });
       }
     }
@@ -166,24 +162,27 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _addNote() async {
-    final result = await showDialog<Map<String, String>>(
-      context: context,
-      builder: (context) => const AddEditNoteDialog(
-        initialTitle: '',
-        initialContent: '',
-        initialCategory: 'Recordatorios', // Default category
-        isEdit: false,
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(
+        builder: (context) => const NoteDetailScreen(note: null),
       ),
     );
 
     if (result != null) {
+      final title = result['title'] as String;
+      final content = result['content'] as String;
+      final categoryId = result['categoryId'] as String;
+
       try {
-        final backendCategory = mapCategoryToBackend(result['categoryId']!);
         final payload = {
-          'title': result['title'],
-          'content': result['content'],
-          'categoryId': backendCategory,
+          'title': title,
+          'content': content,
+          'categoryId': categoryId,
         };
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Creando nota...', style: const TextStyle(color: Colors.white)), backgroundColor: Colors.blueAccent),
+        );
 
         final restOperation = Amplify.API.post(
           '/notes',
@@ -194,10 +193,15 @@ class _HomeScreenState extends State<HomeScreen> {
         safePrint('POST /notes response: ${response.statusCode} - ${response.decodeBody()}');
         if (!mounted) return;
         if (response.statusCode == 201) {
+          final Map<String, dynamic> responseBody = jsonDecode(response.decodeBody());
+          final Note newNote = Note.fromJson(responseBody['note']);
+          setState(() {
+            _notes.insert(0, newNote);
+          });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('¡Nota brillante creada con éxito! ✨', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF28A745)),
+            // CAMBIO DE TEXTO AQUÍ
+            const SnackBar(content: Text('¡Nota creada con éxito! ✨', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF28A745)),
           );
-          _fetchNotes();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error al crear nota: ${response.decodeBody()}', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFEF233C)),
@@ -213,39 +217,51 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _editNote(Note note) async {
-    final result = await showDialog<Map<String, String>>(
-      context: context,
-      builder: (context) => AddEditNoteDialog(
-        initialTitle: note.title,
-        initialContent: note.content,
-        initialCategory: mapCategoryToUI(note.categoryId),
-        isEdit: true,
+  Future<void> _editNote(Note originalNote) async {
+    final result = await Navigator.of(context).push<Map<String, dynamic>>(
+      MaterialPageRoute(
+        builder: (context) => NoteDetailScreen(note: originalNote),
       ),
     );
 
     if (result != null) {
+      final updatedTitle = result['title'] as String;
+      final updatedContent = result['content'] as String;
+      final updatedCategory = result['categoryId'] as String;
+      final noteId = result['noteId'] as String;
+
+      if (!mounted) return;
+      setState(() {
+        _loadingNoteIds.add(noteId);
+      });
+
       try {
-        final backendCategory = mapCategoryToBackend(result['categoryId']!);
         final payload = {
-          'title': result['title'],
-          'content': result['content'],
-          'categoryId': backendCategory,
+          'title': updatedTitle,
+          'content': updatedContent,
+          'categoryId': updatedCategory,
         };
 
         final restOperation = Amplify.API.put(
-          '/notes/${note.noteId}',
+          '/notes/$noteId',
           apiName: 'notesApi',
           body: HttpPayload.json(payload),
         );
         final response = await restOperation.response;
-        safePrint('PUT /notes/${note.noteId} response: ${response.statusCode} - ${response.decodeBody()}');
+        safePrint('PUT /notes/$noteId response: ${response.statusCode} - ${response.decodeBody()}');
         if (!mounted) return;
         if (response.statusCode == 200) {
+          final Map<String, dynamic> responseBody = jsonDecode(response.decodeBody());
+          final Note updatedNote = Note.fromJson(responseBody['note']);
+          setState(() {
+            final index = _notes.indexWhere((n) => n.noteId == updatedNote.noteId);
+            if (index != -1) {
+              _notes[index] = updatedNote;
+            }
+          });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('¡Nota actualizada con éxito! 🎉', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF28A745)),
           );
-          _fetchNotes();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error al actualizar nota: ${response.decodeBody()}', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFEF233C)),
@@ -257,6 +273,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error de API: ${e.message}', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFEF233C)),
         );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _loadingNoteIds.remove(noteId);
+          });
+        }
       }
     }
   }
@@ -266,7 +288,8 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmar Eliminación', style: TextStyle(color: Color(0xFF1A1A1A))),
-        content: const Text('¿Estás seguro de que quieres eliminar esta nota brillante? ¡Se irá para siempre!', style: TextStyle(color: Color(0xFF333333))),
+        // CAMBIO DE TEXTO AQUÍ
+        content: const Text('¿Estás seguro de que quieres eliminar esta nota? ¡Se irá para siempre!', style: TextStyle(color: Color(0xFF333333))),
         backgroundColor: Colors.white,
         actions: [
           TextButton(
@@ -276,7 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF233C)), // Rojo para eliminar
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF233C)),
             child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -284,6 +307,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (confirm == true) {
+      if (!mounted) return;
+      setState(() {
+        _loadingNoteIds.add(noteId);
+      });
+
       try {
         final restOperation = Amplify.API.delete(
           '/notes/$noteId',
@@ -293,10 +321,12 @@ class _HomeScreenState extends State<HomeScreen> {
         safePrint('DELETE /notes/$noteId response: ${response.statusCode} - ${response.decodeBody()}');
         if (!mounted) return;
         if (response.statusCode == 200) {
+          setState(() {
+            _notes.removeWhere((note) => note.noteId == noteId);
+          });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('¡Nota eliminada con éxito! Adiós, idea. 👋', style: TextStyle(color: Colors.white)), backgroundColor: Color(0xFF28A745)),
           );
-          _fetchNotes();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error al eliminar nota: ${response.decodeBody()}', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFEF233C)),
@@ -308,6 +338,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error de API: ${e.message}', style: const TextStyle(color: Colors.white)), backgroundColor: const Color(0xFFEF233C)),
         );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _loadingNoteIds.remove(noteId);
+          });
+        }
       }
     }
   }
@@ -333,7 +369,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return notesToFilter;
   }
 
-  // Función para cambiar el color de fondo
   void _toggleBackgroundColor() {
     setState(() {
       _backgroundColor = _backgroundColor == Colors.grey[50] ? Colors.grey[900]! : Colors.grey[50]!;
@@ -367,208 +402,40 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: _backgroundColor,
-      drawer: Drawer(
-        child: Container(
-          color: const Color(0xFF1A1A1A),
-          child: ListView(
-            padding: EdgeInsets.zero,
-            children: <Widget>[
-              DrawerHeader(
-                decoration: const BoxDecoration(
-                  color: Color(0xFF333333),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.white.withOpacity(0.1),
-                      child: const Icon(Icons.person, size: 40, color: Colors.white70),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      '¡Hola,',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 16,
-                        fontFamily: 'Open Sans',
-                      ),
-                    ),
-                    // AQUÍ ESTÁ LA CORRECCIÓN PARA EL DESBORDAMIENTO DEL USUARIO
-                    Text(
-                      '$_userName!',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Montserrat',
-                      ),
-                      maxLines: 1, // Limita a una línea
-                      overflow: TextOverflow.ellipsis, // Añade puntos suspensivos si se desborda
-                    ),
-                  ],
-                ),
-              ),
-              _buildDrawerItem(
-                icon: Icons.notes,
-                text: 'Mis Notas',
-                isSelected: true,
-                onTap: () {
-                  Navigator.pop(context);
-                },
-              ),
-              _buildDrawerItem(
-                icon: Icons.archive,
-                text: 'Archivadas',
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Funcionalidad de Archivadas pendiente.', style: TextStyle(color: Colors.white)), backgroundColor: Colors.orange));
-                },
-              ),
-              _buildDrawerItem(
-                icon: Icons.settings,
-                text: 'Configuración',
-                onTap: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Funcionalidad de Configuración pendiente.', style: TextStyle(color: Colors.white)), backgroundColor: Colors.orange));
-                },
-              ),
-              _buildDrawerItem(
-                icon: isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                text: isDarkMode ? 'Modo Claro' : 'Modo Oscuro',
-                onTap: () {
-                  _toggleBackgroundColor();
-                  Navigator.pop(context);
-                },
-              ),
-              const Spacer(),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: ElevatedButton.icon(
-                    onPressed: () => _signOut(context),
-                    icon: const Icon(Icons.logout, color: Colors.white),
-                    label: const Text('Cerrar Sesión', style: TextStyle(color: Colors.white, fontFamily: 'Open Sans')),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFEF233C),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      drawer: HomeDrawer(
+        userName: _userName,
+        isDarkMode: isDarkMode,
+        onSignOut: () => _signOut(context),
+        onToggleTheme: _toggleBackgroundColor,
       ),
+      // --- FloatingActionButton AÑADIDO AQUÍ ---
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addNote,
+        backgroundColor: const Color(0xFFFF3B30),
+        child: const Icon(Icons.add, color: Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30.0), // Hazlo más redondo
+        ),
+        elevation: 6.0,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat, // Colócalo en la esquina inferior derecha
+      // --- FIN FloatingActionButton ---
       body: Column(
         children: [
-          Container(
-            color: topBarColor,
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: SafeArea(
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Builder(
-                        builder: (context) => IconButton(
-                          icon: Icon(Icons.menu, color: primaryTextColor, size: 30),
-                          onPressed: () {
-                            Scaffold.of(context).openDrawer();
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Tus Ideas Brillantes',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: primaryTextColor,
-                          fontFamily: 'Poppins',
-                        ),
-                      ),
-                      const Spacer(),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.only(right: 8.0),
-                          decoration: BoxDecoration(
-                            color: searchBarColor,
-                            borderRadius: BorderRadius.circular(25),
-                            border: Border.all(color: primaryTextColor.withOpacity(0.2), width: 1),
-                          ),
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: InputDecoration(
-                              hintText: 'Buscar notas divertidas...',
-                              hintStyle: TextStyle(color: secondaryTextColor.withOpacity(0.7)),
-                              border: InputBorder.none,
-                              prefixIcon: Icon(Icons.search, color: dropdownIconColor),
-                              contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                            ),
-                            onChanged: (value) {
-                              setState(() {});
-                            },
-                            style: TextStyle(fontFamily: 'Open Sans', color: primaryTextColor),
-                          ),
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: _addNote,
-                        icon: const Icon(Icons.add, color: Colors.white),
-                        label: const Text('Nueva Nota', style: TextStyle(color: Colors.white, fontFamily: 'Open Sans')),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFF3B30),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25),
-                          ),
-                          elevation: 5,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: searchBarColor,
-                          borderRadius: BorderRadius.circular(25),
-                          border: Border.all(color: primaryTextColor.withOpacity(0.2), width: 1),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton<String>(
-                            value: _selectedCategory,
-                            icon: Icon(Icons.arrow_drop_down, color: dropdownIconColor),
-                            style: TextStyle(color: primaryTextColor, fontSize: 16, fontFamily: 'Open Sans'),
-                            dropdownColor: cardBackgroundColor,
-                            onChanged: (String? newValue) {
-                              setState(() {
-                                _selectedCategory = newValue!;
-                              });
-                            },
-                            items: kNoteCategoriesUI.map<DropdownMenuItem<String>>((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value, style: TextStyle(fontFamily: 'Open Sans', color: primaryTextColor)),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+          HomeAppBar(
+            searchController: _searchController,
+            selectedCategory: _selectedCategory,
+            onCategoryChanged: (newValue) {
+              setState(() {
+                _selectedCategory = newValue!;
+              });
+            },
+            // onAddNote: _addNote, // YA NO NECESARIO AQUÍ
+            primaryTextColor: primaryTextColor,
+            secondaryTextColor: secondaryTextColor,
+            searchBarColor: searchBarColor,
+            dropdownIconColor: dropdownIconColor,
+            topBarColor: topBarColor,
           ),
           Expanded(
             child: _isLoading
@@ -588,7 +455,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Text(
-                                  'Crea una nueva idea brillante con el botón "+ Nueva Nota".',
+                                  // CAMBIO DE TEXTO AQUÍ
+                                  'Crea una nueva nota con el botón "+".',
                                   style: TextStyle(fontSize: 16, color: secondaryTextColor.withOpacity(0.8), fontFamily: 'Open Sans'),
                                   textAlign: TextAlign.center,
                                 ),
@@ -626,6 +494,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 cardColor = Colors.grey.shade100;
                             }
 
+                            final bool isNoteLoading = _loadingNoteIds.contains(note.noteId);
+
                             return NoteCard(
                               note: note,
                               onEdit: _editNote,
@@ -634,6 +504,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               displayCategory: mapCategoryToUI(note.categoryId),
                               isDarkMode: isDarkMode,
                               userName: _userName,
+                              isLoading: isNoteLoading,
                             );
                           },
                         ),
@@ -642,365 +513,5 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
-  }
-
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String text,
-    required VoidCallback onTap,
-    bool isSelected = false,
-  }) {
-    return Container(
-      color: isSelected ? const Color(0xFFFF3B30).withOpacity(0.3) : Colors.transparent,
-      child: ListTile(
-        leading: Icon(icon, color: isSelected ? Colors.white : const Color(0xFFCCCCCC)),
-        title: Text(
-          text,
-          style: TextStyle(
-            color: isSelected ? Colors.white : const Color(0xFFCCCCCC),
-            fontSize: 18,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontFamily: 'Open Sans',
-          ),
-        ),
-        onTap: onTap,
-      ),
-    );
-  }
-}
-
-// Clase NoteCard (REVERTIDA a su estado anterior, antes de las últimas modificaciones)
-class NoteCard extends StatelessWidget {
-  final Note note;
-  final Function(Note) onEdit;
-  final Function(String) onDelete;
-  final Color cardColor;
-  final String displayCategory;
-  final bool isDarkMode;
-  final String userName; // Mantenemos este parámetro para flexibilidad si lo quieres usar después
-
-  const NoteCard({
-    super.key,
-    required this.note,
-    required this.onEdit,
-    required this.onDelete,
-    required this.cardColor,
-    required this.displayCategory,
-    this.isDarkMode = false,
-    required this.userName, // Sigue siendo requerido
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final Color titleColor = isDarkMode ? Colors.white : const Color(0xFF333333);
-    final Color contentColor = isDarkMode ? Colors.grey[300]! : Colors.grey[700]!;
-    final Color dateColor = isDarkMode ? Colors.grey[500]! : Colors.grey[500]!;
-    final Color cardBorderColor = isDarkMode ? cardColor.darken(0.3) : cardColor.darken(0.1);
-    final Color cardBackground = isDarkMode ? Colors.grey[850]! : Colors.white;
-
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-        side: BorderSide(
-          color: cardBorderColor,
-          width: 2,
-        ),
-      ),
-      color: cardBackground,
-      child: InkWell(
-        onTap: () {
-          // Puedes implementar una acción al tocar la tarjeta si deseas, como ver detalles
-        },
-        borderRadius: BorderRadius.circular(15),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 50,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: cardColor.darken(0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                note.title, // Volvemos a usar el título real de la nota
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: titleColor,
-                  fontFamily: 'Montserrat',
-                ),
-                maxLines: 1, // Aseguramos que no se desborde el título
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                child: Text(
-                  note.content, // Volvemos a usar el contenido real de la nota
-                  style: TextStyle(fontSize: 14, color: contentColor, fontFamily: 'Open Sans'),
-                  maxLines: 2, // Aseguramos que no se desborde el contenido
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      note.createdAt.substring(0, 10), // Fecha real de la nota
-                      style: TextStyle(fontSize: 12, color: dateColor, fontFamily: 'Open Sans'),
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () => onEdit(note),
-                            borderRadius: BorderRadius.circular(20),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Icon(Icons.edit, size: 20, color: const Color(0xFFFF3B30)),
-                            ),
-                          ),
-                        ),
-                        Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () => onDelete(note.noteId),
-                            borderRadius: BorderRadius.circular(20),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Icon(Icons.delete, size: 20, color: const Color(0xFFEF233C)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// Clase AddEditNoteDialog (sin cambios significativos)
-class AddEditNoteDialog extends StatefulWidget {
-  final String initialTitle;
-  final String initialContent;
-  final String initialCategory;
-  final bool isEdit;
-
-  const AddEditNoteDialog({
-    super.key,
-    required this.initialTitle,
-    required this.initialContent,
-    required this.initialCategory,
-    required this.isEdit,
-  });
-
-  @override
-  State<AddEditNoteDialog> createState() => _AddEditNoteDialogState();
-}
-
-class _AddEditNoteDialogState extends State<AddEditNoteDialog> {
-  final _formKey = GlobalKey<FormState>();
-  late TextEditingController _titleController;
-  late TextEditingController _contentController;
-  late String _selectedCategory;
-
-  final List<String> _dialogCategories = kNoteCategoriesUI.where((cat) => cat != 'Todas las Notas').toList();
-
-  @override
-  void initState() {
-    super.initState();
-    _titleController = TextEditingController(text: widget.initialTitle);
-    _contentController = TextEditingController(text: widget.initialContent);
-    if (!_dialogCategories.contains(widget.initialCategory)) {
-      _selectedCategory = _dialogCategories.first;
-    } else {
-      _selectedCategory = widget.initialCategory;
-    }
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _contentController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.isEdit ? 'Editar Nota' : 'Añadir Nueva Nota', style: const TextStyle(fontFamily: 'Montserrat', color: Color(0xFF333333))),
-      content: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: InputDecoration(
-                  labelText: 'Título',
-                  hintText: 'Tu idea brillante aquí...',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.lightbulb_outline, color: Color(0xFF333333)),
-                  labelStyle: const TextStyle(color: Color(0xFF333333)),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: const BorderSide(color: Color(0xFFFF3B30), width: 2),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, ingresa un título';
-                  }
-                  return null;
-                },
-                style: const TextStyle(fontFamily: 'Open Sans', color: Color(0xFF333333)),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _contentController,
-                decoration: InputDecoration(
-                  labelText: 'Contenido',
-                  hintText: 'Detalles de tu nota...',
-                  alignLabelWithHint: true,
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.notes, color: Color(0xFF333333)),
-                  labelStyle: const TextStyle(color: Color(0xFF333333)),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: const BorderSide(color: Color(0xFFFF3B30), width: 2),
-                  ),
-                ),
-                maxLines: 5,
-                minLines: 3,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, ingresa el contenido de la nota';
-                  }
-                  return null;
-                },
-                style: const TextStyle(fontFamily: 'Open Sans', color: Color(0xFF333333)),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: InputDecoration(
-                  labelText: 'Categoría',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.category, color: Color(0xFF333333)),
-                  labelStyle: const TextStyle(color: Color(0xFF333333)),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(5),
-                    borderSide: const BorderSide(color: Color(0xFFFF3B30), width: 2),
-                  ),
-                ),
-                items: _dialogCategories.map((String category) {
-                  return DropdownMenuItem<String>(
-                    value: category,
-                    child: Text(category, style: const TextStyle(fontFamily: 'Open Sans', color: Color(0xFF333333))),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedCategory = newValue!;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, selecciona una categoría';
-                  }
-                  return null;
-                },
-                style: const TextStyle(fontFamily: 'Open Sans', color: Color(0xFF333333)),
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          style: TextButton.styleFrom(foregroundColor: const Color(0xFF333333)),
-          child: const Text('Cancelar', style: TextStyle(fontFamily: 'Open Sans')),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              Navigator.of(context).pop({
-                'title': _titleController.text,
-                'content': _contentController.text,
-                'categoryId': _selectedCategory,
-              });
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFFF3B30),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          child: Text(widget.isEdit ? 'Guardar Cambios' : 'Añadir Nota', style: const TextStyle(fontFamily: 'Open Sans')),
-        ),
-      ],
-    );
-  }
-}
-
-class Note {
-  final String noteId;
-  final String title;
-  final String content;
-  final String categoryId;
-  final String userId;
-  final String createdAt;
-  final String updatedAt;
-
-  Note({
-    required this.noteId,
-    required this.title,
-    required this.content,
-    required this.categoryId,
-    required this.userId,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory Note.fromJson(Map<String, dynamic> json) {
-    return Note(
-      noteId: json['noteId'] as String,
-      title: json['title'] as String,
-      content: json['content'] as String,
-      categoryId: json['categoryId'] as String,
-      userId: json['userId'] as String,
-      createdAt: json['createdAt'] as String,
-      updatedAt: json['updatedAt'] as String,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'noteId': noteId,
-      'title': title,
-      'content': content,
-      'categoryId': categoryId,
-      'userId': userId,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
-    };
   }
 }
